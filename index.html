@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>(재미로 보는) 나에게 맞는 LMO는?</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.7/kakao.min.js"
-            integrity="sha384-dok87au0gKqJdxs7msb1VaxLzj4sRkD8VfW1D5B+G4u5kL8bR1mGQxP8mT0P6LwS"
-            crossorigin="anonymous"></script>
+    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.7/kakao.min.js" crossorigin="anonymous"></script>
     <style>
         :root {
             --primary-color: #52b788;
@@ -465,8 +463,8 @@ const RESULT_INFO = {
 };
 
 const RESULT_DESC = {
-    "DEFAULT": "나와 꼭 닮은 LMO 결과에 만족하시나요? 🧬\n우리 일상 속에 숨어있는 더 많은 바이오신기술과 GMO 이야기가 궁금하다면, 아래 링크를 통해 최신 정보와 재미있는 영상들을 만나보세요!",
-    "ANTI_GMO": "당신은 자연스러운 것들을 사랑하시는군요?\n식재료와 환경, 생태계를 아끼는 마음이 크고, 새로운 기술 앞에서도 한 번 더 생각해 보는 신중함을 가지고 있습니다.\n하지만 가끔씩 바이오 신기술에 관심을 가져보는 것은 어떨까요?"
+    DEFAULT: "나와 꼭 닮은 LMO 결과에 만족하시나요? 🧬\n우리 일상 속에 숨어있는 더 많은 바이오신기술과 GMO 이야기가 궁금하다면, 아래 링크를 통해 최신 정보와 재미있는 영상들을 만나보세요!",
+    ANTI_GMO: "당신은 자연스러운 것들을 사랑하시는군요?\n식재료와 환경, 생태계를 아끼는 마음이 크고, 새로운 기술 앞에서도 한 번 더 생각해 보는 신중함을 가지고 있습니다.\n하지만 가끔씩 바이오 신기술에 관심을 가져보는 것은 어떨까요?"
 };
 
 const QUESTIONS = [
@@ -624,11 +622,7 @@ function updateButtons() {
     const isAnswered = answers[currentQuestion] !== null;
     nextBtn.disabled = !isAnswered;
 
-    if (currentQuestion === QUESTIONS.length - 1) {
-        nextBtn.innerText = '🌿 결과 확인하기';
-    } else {
-        nextBtn.innerText = '다음';
-    }
+    nextBtn.innerText = currentQuestion === QUESTIONS.length - 1 ? '🌿 결과 확인하기' : '다음';
 }
 
 function goNextQuestion() {
@@ -654,11 +648,25 @@ function goPrevQuestion() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+function getBaseDir() {
+    const path = window.location.pathname;
+    return path.endsWith('/') ? path : path.substring(0, path.lastIndexOf('/') + 1);
+}
+
+function getImagePath(filename) {
+    return `./images/${filename}`;
+}
+
+function getImageUrl(filename) {
+    return `${window.location.origin}${getBaseDir()}images/${filename}`;
+}
+
 function getShareData() {
     const title = `나에게 맞는 LMO 테스트 결과: ${latestResultName}`;
     const text = `내 결과는 "${latestResultName}"! 너도 테스트해봐 🌽`;
     const url = window.location.href;
-    const imageUrl = `${window.location.origin}${window.location.pathname.replace(/\/[^\/]*$/, '/') || '/'}images/${RESULT_INFO[latestResultKey]?.[1] || 'default.png'}`;
+    const imageFile = RESULT_INFO[latestResultKey]?.[1] || 'default.png';
+    const imageUrl = getImageUrl(imageFile);
     return { title, text, url, imageUrl };
 }
 
@@ -776,10 +784,10 @@ function showResult() {
         resultKey = 'ANTI_GMO';
     } else {
         resultKey = [
-            scores["E"] >= scores["I"] ? "E" : "I",
-            scores["S"] >= scores["N"] ? "S" : "N",
-            scores["T"] >= scores["F"] ? "T" : "F",
-            scores["J"] >= scores["P"] ? "J" : "P"
+            scores.E >= scores.I ? "E" : "I",
+            scores.S >= scores.N ? "S" : "N",
+            scores.T >= scores.F ? "T" : "F",
+            scores.J >= scores.P ? "J" : "P"
         ].join('');
     }
 
@@ -788,17 +796,16 @@ function showResult() {
     const [organism, filename] = RESULT_INFO[resultKey] || ["결과 생물", "default.png"];
     latestResultName = organism;
 
-    document.getElementById('result-mbti-text').innerText = organism;
-    document.getElementById('result-image').src = `images/${filename}`;
-    document.getElementById('result-image').onerror = function() {
+    const resultImage = document.getElementById('result-image');
+    resultImage.src = getImagePath(filename);
+    resultImage.alt = `${organism} 이미지`;
+    resultImage.onerror = function() {
         this.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
     };
 
-    if (resultKey === 'ANTI_GMO') {
-        document.getElementById('result-desc').innerText = RESULT_DESC.ANTI_GMO;
-    } else {
-        document.getElementById('result-desc').innerText = RESULT_DESC.DEFAULT;
-    }
+    document.getElementById('result-mbti-text').innerText = organism;
+    document.getElementById('result-desc').innerText =
+        resultKey === 'ANTI_GMO' ? RESULT_DESC.ANTI_GMO : RESULT_DESC.DEFAULT;
 
     document.getElementById('quiz-section').style.display = 'none';
     document.getElementById('result-section').style.display = 'block';
