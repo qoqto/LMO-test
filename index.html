@@ -455,7 +455,7 @@ const RESULT_INFO = {
 
 const RESULT_DESC = {
     DEFAULT: "나와 꼭 닮은 LMO 결과에 만족하시나요? 🧬\n우리 일상 속에 숨어있는 더 많은 바이오신기술과 GMO 이야기가 궁금하다면, 아래 링크를 통해 최신 정보와 재미있는 영상들을 만나보세요!",
-    ANTI_GMO: "유일한 non-GMO가 나온 당신은 자연스러운 것들을 사랑하시는군요?\n 당신은 새로운 기술 앞에서도 한 번 더 생각해 보는 신중함을 가지고 있습니다.\n하지만 가끔씩 바이오 신기술에 관심을 가져보는 것은 어떨까요?"
+    ANTI_GMO: "유일한 non-GMO가 나온 당신은 자연스러운 것들을 사랑하시는군요?\n당신은 새로운 기술 앞에서도 한 번 더 생각해 보는 신중함을 가지고 있습니다.\n하지만 가끔씩 바이오 신기술에 관심을 가져보는 것은 어떨까요?"
 };
 
 const QUESTIONS = [
@@ -507,9 +507,9 @@ const QUESTIONS = [
     {
         question: "유전자변형식품 '완전표시제'가 도입된다고 한다.* 나의 반응은?\n\n* 완전표시제는 GMO(유전자변형생물체·Genetically Modified Organism)를 사용한 식품이면, 최종 제품에 GMO 단백질·유전자가 남아 있지 않아도 유전자변형식품으로 표시하는 제도입니다.",
         options: [
-            ["소비자의 알 권리가 늘어나겠네! 좋은 제도다", {"E": 1, "P":1}],
+            ["소비자의 알 권리가 늘어나겠네! 좋은 제도다", {"E": 1, "P": 1}],
             ["이제 우리 가족들이 안심하고 먹을 식품을 고를 수 있겠다", {"F": 2, "J": 1, "antiGmo": 1}],
-            ["실제로 도입되면 사람들 선택이 어떻게 달라질지 지켜보고 싶다", {"T":1, "N": 2}],
+            ["실제로 도입되면 사람들 선택이 어떻게 달라질지 지켜보고 싶다", {"T": 1, "N": 2}],
             ["내 일상에 얼마나 영향 있을지 잘 모르겠다. 일단은 크게 개의치 않을 것 같다", {"P": 1, "I": 1}]
         ]
     },
@@ -517,8 +517,8 @@ const QUESTIONS = [
         question: "인스타/유튜브 숏폼에서 자극적인 '논란 콘텐츠'가 떴을 때?",
         options: [
             ["사실이 아닌거 같은데? 자료 출처를 찾은 후 반박 댓글을 단다", {"T": 2, "N": 2}],
-            ["썸네일이 너무 자극적이라 안 본다. 그래도 내용은 좀 궁금하다", {"F": 1, "I": 1, "N":1}],
-            ["괜히 불안해서, 댓글 분위기랑 다른 영상들까지 계속 찾아본다", {"antiGmo": 1, "F": 1, "N":1}],
+            ["썸네일이 너무 자극적이라 안 본다. 그래도 내용은 좀 궁금하다", {"F": 1, "I": 1, "N": 1}],
+            ["괜히 불안해서, 댓글 분위기랑 다른 영상들까지 계속 찾아본다", {"antiGmo": 1, "F": 1, "N": 1}],
             ["그냥 재미로 보고 다음 영상으로 넘어간다", {"P": 1, "S": 1}]
         ]
     },
@@ -536,6 +536,7 @@ const QUESTIONS = [
 let currentQuestion = 0;
 const answers = new Array(QUESTIONS.length).fill(null);
 let latestResultName = '';
+let latestResultKey = '';
 
 const questionsContainer = document.getElementById('questions-container');
 const progressText = document.getElementById('progress-text');
@@ -628,17 +629,25 @@ function goPrevQuestion() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+function getShareUrl() {
+    const url = new URL(window.location.href);
+    url.searchParams.set('result', latestResultKey);
+    return url.toString();
+}
+
 function getShareData() {
-    const title = `나에게 맞는 LMO 테스트 결과: ${latestResultName}`;
+    const title = `나에게 맞는 GMO 테스트 결과: ${latestResultName}`;
     const text = `내 결과는 "${latestResultName}"! 너도 테스트해봐 🌽`;
-    const url = window.location.href;
+    const url = getShareUrl();
     return { title, text, url };
 }
 
 function showFeedback(message) {
     shareFeedback.innerText = message;
     setTimeout(() => {
-        shareFeedback.innerText = '';
+        if (shareFeedback.innerText === message) {
+            shareFeedback.innerText = '';
+        }
     }, 2500);
 }
 
@@ -676,6 +685,32 @@ async function shareResult() {
             await copyResultLink();
         }
     }
+}
+
+function applyResult(resultKey, fromQuery = false) {
+    const [organism, filename] = RESULT_INFO[resultKey] || ["결과 생물", "default.png"];
+    latestResultName = organism;
+    latestResultKey = resultKey;
+
+    document.getElementById('result-mbti-text').innerText = organism;
+    document.getElementById('result-image').src = `./images/${filename}`;
+    document.getElementById('result-image').onerror = function() {
+        this.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
+    };
+
+    document.getElementById('result-desc').innerText =
+        resultKey === 'ANTI_GMO' ? RESULT_DESC.ANTI_GMO : RESULT_DESC.DEFAULT;
+
+    document.getElementById('quiz-section').style.display = 'none';
+    document.getElementById('result-section').style.display = 'block';
+
+    if (!fromQuery) {
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.set('result', resultKey);
+        window.history.replaceState({}, '', newUrl.toString());
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function showResult() {
@@ -723,24 +758,7 @@ function showResult() {
         ].join('');
     }
 
-    const [organism, filename] = RESULT_INFO[resultKey] || ["결과 생물", "default.png"];
-    latestResultName = organism;
-
-    document.getElementById('result-mbti-text').innerText = organism;
-    document.getElementById('result-image').src = `./images/${filename}`;
-    document.getElementById('result-image').onerror = function() {
-        this.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
-    };
-
-    if (resultKey === 'ANTI_GMO') {
-        document.getElementById('result-desc').innerText = RESULT_DESC.ANTI_GMO;
-    } else {
-        document.getElementById('result-desc').innerText = RESULT_DESC.DEFAULT;
-    }
-
-    document.getElementById('quiz-section').style.display = 'none';
-    document.getElementById('result-section').style.display = 'block';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    applyResult(resultKey);
 }
 
 function resetQuiz() {
@@ -749,16 +767,30 @@ function resetQuiz() {
     }
     currentQuestion = 0;
     latestResultName = '';
+    latestResultKey = '';
     document.getElementById('quiz-form').reset();
     document.getElementById('result-section').style.display = 'none';
     document.getElementById('quiz-section').style.display = 'block';
     document.getElementById('result-desc').innerText = RESULT_DESC.DEFAULT;
     shareFeedback.innerText = '';
+    const baseUrl = new URL(window.location.href);
+    baseUrl.searchParams.delete('result');
+    window.history.replaceState({}, '', baseUrl.toString());
     renderQuestion();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-renderQuestion();
+function loadResultFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const resultKey = params.get('result');
+    if (resultKey && RESULT_INFO[resultKey]) {
+        applyResult(resultKey, true);
+    } else {
+        renderQuestion();
+    }
+}
+
+loadResultFromUrl();
 </script>
 </body>
 </html>
