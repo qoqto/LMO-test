@@ -81,6 +81,53 @@
             line-height: 1.5;
         }
 
+        .main-start {
+            text-align: center;
+            padding: 10px 0 6px;
+        }
+
+        .main-image-wrap {
+            margin: 0 auto 20px;
+            max-width: 100%;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 10px 24px rgba(64, 145, 108, 0.12);
+            border: 1px solid var(--border-color);
+            background: #fff;
+        }
+
+        .main-image-wrap img {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .main-copy {
+            color: #52796f;
+            font-size: 0.96rem;
+            margin-bottom: 18px;
+        }
+
+        .start-btn {
+            display: inline-block;
+            width: 100%;
+            padding: 14px;
+            font-size: 1.02rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 4px 10px rgba(82, 183, 136, 0.3);
+        }
+
+        .start-btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
         .progress-wrap {
             margin-bottom: 22px;
         }
@@ -371,7 +418,23 @@
 <body>
 
 <div class="container">
-    <div id="quiz-section">
+    <div id="start-section">
+        <header>
+            <h1>🌽 나와 맞는 GMO는?</h1>
+            <p>테스트를 시작하기 전에 메인 이미지를 먼저 확인해 보세요.</p>
+            <p class="header-note">* GMO(Genetically Modified Organism, 유전자변형생물체)는 현대 생명공학기술을 이용해 새롭게 조합된 유전물질을 포함한 생물을 말합니다.</p>
+        </header>
+
+        <div class="main-start">
+            <div class="main-image-wrap">
+                <img src="./images/main.png" alt="GMO 테스트 메인 이미지">
+            </div>
+            <div class="main-copy">아래 버튼을 누르면 재미로 보는 GMO 테스트가 시작됩니다.</div>
+            <button type="button" class="start-btn" onclick="startQuiz()">시작하기</button>
+        </div>
+    </div>
+
+    <div id="quiz-section" style="display:none;">
         <header>
             <h1>🌽 나와 맞는 GMO는?</h1>
             <p>각 문항에서 가장 나와 가까운 답을 하나 선택하세요. 나에게 꼭 맞는 GMO를 찾아 드립니다!</p>
@@ -545,6 +608,15 @@ const progressFill = document.getElementById('progress-fill');
 const prevBtn = document.getElementById('prev-btn');
 const nextBtn = document.getElementById('next-btn');
 const shareFeedback = document.getElementById('share-feedback');
+const startSection = document.getElementById('start-section');
+const quizSection = document.getElementById('quiz-section');
+
+function startQuiz() {
+    startSection.style.display = 'none';
+    quizSection.style.display = 'block';
+    renderQuestion();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
 function renderQuestion() {
     const q = QUESTIONS[currentQuestion];
@@ -568,9 +640,7 @@ function renderQuestion() {
         radio.value = oIdx;
         radio.checked = answers[currentQuestion] === oIdx;
 
-        if (radio.checked) {
-            label.classList.add('selected');
-        }
+        if (radio.checked) label.classList.add('selected');
 
         radio.addEventListener('change', function() {
             answers[currentQuestion] = oIdx;
@@ -701,6 +771,7 @@ function applyResult(resultKey, fromQuery = false) {
     document.getElementById('result-desc').innerText =
         resultKey === 'ANTI_GMO' ? RESULT_DESC.ANTI_GMO : RESULT_DESC.DEFAULT;
 
+    document.getElementById('start-section').style.display = 'none';
     document.getElementById('quiz-section').style.display = 'none';
     document.getElementById('result-section').style.display = 'block';
 
@@ -727,20 +798,14 @@ function showResult() {
         }
 
         const hasAntiOption = QUESTIONS[i].options.some(opt => opt[1].antiGmo);
-        if (hasAntiOption) {
-            antiGmoQuestionCount += 1;
-        }
+        if (hasAntiOption) antiGmoQuestionCount += 1;
 
         const mapping = QUESTIONS[i].options[answers[i]][1];
 
-        if (mapping.antiGmo) {
-            antiGmoCount += mapping.antiGmo;
-        }
+        if (mapping.antiGmo) antiGmoCount += mapping.antiGmo;
 
         for (const [key, val] of Object.entries(mapping)) {
-            if (key !== 'antiGmo') {
-                scores[key] += val;
-            }
+            if (key !== 'antiGmo') scores[key] += val;
         }
     }
 
@@ -762,21 +827,19 @@ function showResult() {
 }
 
 function resetQuiz() {
-    for (let i = 0; i < answers.length; i++) {
-        answers[i] = null;
-    }
+    for (let i = 0; i < answers.length; i++) answers[i] = null;
     currentQuestion = 0;
     latestResultName = '';
     latestResultKey = '';
     document.getElementById('quiz-form').reset();
     document.getElementById('result-section').style.display = 'none';
-    document.getElementById('quiz-section').style.display = 'block';
+    document.getElementById('quiz-section').style.display = 'none';
+    document.getElementById('start-section').style.display = 'block';
     document.getElementById('result-desc').innerText = RESULT_DESC.DEFAULT;
     shareFeedback.innerText = '';
     const baseUrl = new URL(window.location.href);
     baseUrl.searchParams.delete('result');
     window.history.replaceState({}, '', baseUrl.toString());
-    renderQuestion();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -786,7 +849,9 @@ function loadResultFromUrl() {
     if (resultKey && RESULT_INFO[resultKey]) {
         applyResult(resultKey, true);
     } else {
-        renderQuestion();
+        startSection.style.display = 'block';
+        quizSection.style.display = 'none';
+        document.getElementById('result-section').style.display = 'none';
     }
 }
 
